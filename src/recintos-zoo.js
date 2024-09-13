@@ -1,7 +1,3 @@
-// recinto.animais.forEach(animal => {
-//     espacoTotal += animal.tamanho;
-// });
-
 class RecintosZoo {
   static recintos = [
     {
@@ -56,48 +52,6 @@ class RecintosZoo {
         recinto.bioma.includes(biomaDoAnimal)
       );
     });
-  }
-
-  getEspacoLivre(recinto, animal, quantidade) {
-    const espacoJaOcupado = recinto.animais.reduce((acc, animalDoRecinto) => {
-      // multiplica a quantidade do animal no recinto pelo tamanho da espécie
-      // dele, para saber o espaço que ele(s) ocupa(m).
-      const tamanhoEspecie = RecintosZoo.animais.find(
-        (animalCatalogado) =>
-          animalCatalogado.especie === animalDoRecinto.especie
-      ).tamanho;
-      return acc + animalDoRecinto.quantidade * tamanhoEspecie;
-    }, 0);
-
-    const tamanhoAnimais =
-      RecintosZoo.animais.find(
-        (animalCatalogado) => animalCatalogado.especie === animal.toLowerCase()
-      ).tamanho * quantidade;
-
-    let espacoLivre = recinto.tamanhoTotal - espacoJaOcupado - tamanhoAnimais;
-
-    return {
-      espacoLivre,
-      espacoJaOcupado,
-    };
-
-    // if (espacoLivre < 0) {
-    //   return false;
-    // }
-
-    // const temEspeciesDiferentes = recinto.animais.some(
-    //   (animalDoRecinto) => animalDoRecinto.especie !== animal.toLowerCase()
-    // );
-
-    // if (temEspeciesDiferentes) {
-    //   // espaco extra ocupado
-    //   espacoLivre -= 1;
-    //   if (espacoLivre < 0) {
-    //     return false;
-    //   }
-    // }
-
-    // return true;
   }
 
   analisaRecintos(animal, quantidade) {
