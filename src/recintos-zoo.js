@@ -31,6 +31,8 @@ class RecintosZoo {
     { especie: "hipopotamo", tamanho: 4, bioma: "savana ou rio" },
   ];
 
+  static animaisCarnivoros = ["leao", "leopardo", "crocodilo"];
+
   /**
    * Retorna true se a espécie do animal existe na lista permitida pelo Zoológico,
    * false caso contrário
@@ -41,7 +43,7 @@ class RecintosZoo {
     );
   }
 
-  getRecintosComBiomaCompativelAoAnimal(animal) {
+  obterRecintosComBiomaCompativelAoAnimal(animal) {
     const catalogoDoAnimalNoZoo = RecintosZoo.animais.find(
       (animalCatalogado) => animalCatalogado.especie === animal.toLowerCase()
     );
@@ -54,6 +56,39 @@ class RecintosZoo {
     });
   }
 
+  obterTamanhoEspecie(especie) {
+    return RecintosZoo.animais.find(
+      (animalCatalogado) => animalCatalogado.especie === especie
+    ).tamanho;
+  }
+
+  calcularEspacoOcupado(recinto) {
+    return recinto.animais.reduce((acc, animalDoRecinto) => {
+      const tamanhoEspecie = this.obterTamanhoEspecie(animalDoRecinto.especie);
+      return acc + animalDoRecinto.quantidade * tamanhoEspecie;
+    }, 0);
+  }
+
+  formatarRecinto(recinto, espacoLivre) {
+    return `Recinto ${recinto.numero} (espaço livre: ${espacoLivre} total: ${recinto.tamanhoTotal})`;
+  }
+
+  calcularEspacoLivre(recinto, animal, quantidade) {
+    const espacoJaOcupado = this.calcularEspacoOcupado(recinto);
+    const tamanhoAnimais =
+      this.obterTamanhoEspecie(animal.toLowerCase()) * quantidade;
+    return recinto.tamanhoTotal - espacoJaOcupado - tamanhoAnimais;
+  }
+
+  excluirRecintosComCarnivoros(recintos) {
+    return recintos.filter(
+      (recinto) =>
+        !recinto.animais.some((animalDoRecinto) =>
+          RecintosZoo.animaisCarnivoros.includes(animalDoRecinto.especie)
+        )
+    );
+  }
+
   analisaRecintos(animal, quantidade) {
     if (typeof animal !== "string" || !this.existeEspecie(animal)) {
       return { erro: "Animal inválido" };
@@ -64,12 +99,10 @@ class RecintosZoo {
     }
 
     const recintosComBiomaCompativelAoAnimal =
-      this.getRecintosComBiomaCompativelAoAnimal(animal);
-
-    const carnivoros = ["leao", "leopardo", "crocodilo"];
+      this.obterRecintosComBiomaCompativelAoAnimal(animal);
 
     // FLUXO 1: animal é carnívoro
-    if (carnivoros.includes(animal.toLowerCase())) {
+    if (RecintosZoo.animaisCarnivoros.includes(animal.toLowerCase())) {
       // retorna somente recintos que possuem a mesma espécie, ou nenhum animal
       const somenteMesmaEspecieOuVazio =
         recintosComBiomaCompativelAoAnimal.filter((recinto) =>
@@ -81,44 +114,22 @@ class RecintosZoo {
 
       const recinto = somenteMesmaEspecieOuVazio[0];
 
-      const espacoJaOcupado = recinto.animais.reduce((acc, animalDoRecinto) => {
-        // multiplica a quantidade do animal no recinto pelo tamanho da espécie
-        // dele, para saber o espaço que ele(s) ocupa(m).
-        const tamanhoEspecie = RecintosZoo.animais.find(
-          (animalCatalogado) =>
-            animalCatalogado.especie === animalDoRecinto.especie
-        ).tamanho;
-        return acc + animalDoRecinto.quantidade * tamanhoEspecie;
-      }, 0);
-
-      const tamanhoAnimais =
-        RecintosZoo.animais.find(
-          (animalCatalogado) =>
-            animalCatalogado.especie === animal.toLowerCase()
-        ).tamanho * quantidade;
-
-      const espacoLivre =
-        recinto.tamanhoTotal - espacoJaOcupado - tamanhoAnimais;
+      const espacoLivre = this.calcularEspacoLivre(recinto, animal, quantidade);
 
       if (espacoLivre < 0) {
         return { erro: "Não há recinto viável" };
       }
 
       return {
-        recintosViaveis: [
-          `Recinto ${recinto.numero} (espaço livre: ${espacoLivre} total: ${recinto.tamanhoTotal})`,
-        ],
+        recintosViaveis: [this.formatarRecinto(recinto, espacoLivre)],
       };
     }
 
     // FLUXO 2: animal não é carnívoro
     if (animal.toLowerCase() === "hipopotamo") {
       // sem carnívoros
-      const recintosSemCarnivoros = recintosComBiomaCompativelAoAnimal.filter(
-        (recinto) =>
-          !recinto.animais.some((animalDoRecinto) =>
-            carnivoros.includes(animalDoRecinto.especie)
-          )
+      const recintosSemCarnivoros = this.excluirRecintosComCarnivoros(
+        recintosComBiomaCompativelAoAnimal
       );
       // só deixa os de animais de espécies diferentes que são da savana e rio
       const recintos = recintosSemCarnivoros.filter((recinto) => {
@@ -132,40 +143,21 @@ class RecintosZoo {
 
       return {
         recintosViaveis: recintos.map((recinto) => {
-          const espacoJaOcupado = recinto.animais.reduce(
-            (acc, animalDoRecinto) => {
-              // multiplica a quantidade do animal no recinto pelo tamanho da espécie
-              // dele, para saber o espaço que ele(s) ocupa(m).
-              const tamanhoEspecie = RecintosZoo.animais.find(
-                (animalCatalogado) =>
-                  animalCatalogado.especie === animalDoRecinto.especie
-              ).tamanho;
-              return acc + animalDoRecinto.quantidade * tamanhoEspecie;
-            },
-            0
+          const espacoLivre = this.calcularEspacoLivre(
+            recinto,
+            animal,
+            quantidade
           );
 
-          const tamanhoAnimais =
-            RecintosZoo.animais.find(
-              (animalCatalogado) =>
-                animalCatalogado.especie === animal.toLowerCase()
-            ).tamanho * quantidade;
-
-          const espacoLivre =
-            recinto.tamanhoTotal - espacoJaOcupado - tamanhoAnimais;
-
-          return `Recinto ${recinto.numero} (espaço livre: ${espacoLivre} total: ${recinto.tamanhoTotal})`;
+          return this.formatarRecinto(recinto, espacoLivre);
         }),
       };
     }
 
     if (animal.toLowerCase() === "macaco") {
       // sem carnívoros
-      const recintosSemCarnivoros = recintosComBiomaCompativelAoAnimal.filter(
-        (recinto) =>
-          !recinto.animais.some((animalDoRecinto) =>
-            carnivoros.includes(animalDoRecinto.especie)
-          )
+      const recintosSemCarnivoros = this.excluirRecintosComCarnivoros(
+        recintosComBiomaCompativelAoAnimal
       );
 
       // macaco não pode estar sozinho em um recinto
@@ -178,67 +170,32 @@ class RecintosZoo {
 
       return {
         recintosViaveis: recintos.map((recinto) => {
-          const espacoJaOcupado = recinto.animais.reduce(
-            (acc, animalDoRecinto) => {
-              // multiplica a quantidade do animal no recinto pelo tamanho da espécie
-              // dele, para saber o espaço que ele(s) ocupa(m).
-              const tamanhoEspecie = RecintosZoo.animais.find(
-                (animalCatalogado) =>
-                  animalCatalogado.especie === animalDoRecinto.especie
-              ).tamanho;
-              return acc + animalDoRecinto.quantidade * tamanhoEspecie;
-            },
-            0
+          const espacoLivre = this.calcularEspacoLivre(
+            recinto,
+            animal,
+            quantidade
           );
 
-          const tamanhoAnimais =
-            RecintosZoo.animais.find(
-              (animalCatalogado) =>
-                animalCatalogado.especie === animal.toLowerCase()
-            ).tamanho * quantidade;
-
-          const espacoLivre =
-            recinto.tamanhoTotal - espacoJaOcupado - tamanhoAnimais;
-
-          return `Recinto ${recinto.numero} (espaço livre: ${espacoLivre} total: ${recinto.tamanhoTotal})`;
+          return this.formatarRecinto(recinto, espacoLivre);
         }),
       };
     }
 
     // FLUXO 3: não é macaco nem hipopotamo
     // sem carnívoros
-    const recintosSemCarnivoros = recintosComBiomaCompativelAoAnimal.filter(
-      (recinto) =>
-        !recinto.animais.some((animalDoRecinto) =>
-          carnivoros.includes(animalDoRecinto.especie)
-        )
+    const recintosSemCarnivoros = this.excluirRecintosComCarnivoros(
+      recintosComBiomaCompativelAoAnimal
     );
 
     return {
       recintosViaveis: recintosSemCarnivoros.map((recinto) => {
-        const espacoJaOcupado = recinto.animais.reduce(
-          (acc, animalDoRecinto) => {
-            // multiplica a quantidade do animal no recinto pelo tamanho da espécie
-            // dele, para saber o espaço que ele(s) ocupa(m).
-            const tamanhoEspecie = RecintosZoo.animais.find(
-              (animalCatalogado) =>
-                animalCatalogado.especie === animalDoRecinto.especie
-            ).tamanho;
-            return acc + animalDoRecinto.quantidade * tamanhoEspecie;
-          },
-          0
+        const espacoLivre = this.calcularEspacoLivre(
+          recinto,
+          animal,
+          quantidade
         );
 
-        const tamanhoAnimais =
-          RecintosZoo.animais.find(
-            (animalCatalogado) =>
-              animalCatalogado.especie === animal.toLowerCase()
-          ).tamanho * quantidade;
-
-        const espacoLivre =
-          recinto.tamanhoTotal - espacoJaOcupado - tamanhoAnimais;
-
-        return `Recinto ${recinto.numero} (espaço livre: ${espacoLivre} total: ${recinto.tamanhoTotal})`;
+        return this.formatarRecinto(recinto, espacoLivre);
       }),
     };
   }
